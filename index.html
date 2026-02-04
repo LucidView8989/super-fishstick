@@ -4,12 +4,47 @@
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Unity WebGL Player | Granny 2</title>
+    <title>Math Solver | Advanced Calculus</title>
+    <meta name="description" content="Advanced online calculus solver and graphing tool for students. Free educational resources for math." />
+    <meta name="keywords" content="math, calculus, solver, education, graph, calculator" />
+    <meta name="referrer" content="no-referrer" />
 
     <link rel="shortcut icon"
-        href="https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/TemplateData/favicon.ico" />
+        href="https://ssl.gstatic.com/classroom/favicon.png" />
     <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/TemplateData/styles.css" />
+        href="TemplateData/styles.css" />
+
+    <!-- URL Cloaking: Visually change the URL to look like a Google Classroom assignment -->
+    <script>
+        // Cosmetic: Change the URL in the address bar
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, "Google Classroom", "/u/0/c/Calculus_AP/materials/view");
+        }
+
+        // Advanced: Open in about:blank to hide from extensions/history (Press ']' to activate)
+        document.addEventListener('keydown', function(event) {
+            if (event.key === ']') {
+                var win = window.open('about:blank', '_blank');
+                if (win) {
+                    win.document.body.style.margin = '0';
+                    win.document.body.style.overflow = 'hidden';
+                    var iframe = win.document.createElement('iframe');
+                    iframe.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; border:none;";
+                    iframe.src = window.location.href;
+                    win.document.body.appendChild(iframe);
+                }
+            }
+        });
+    </script>
+
+    <!-- Preload critical game assets to start downloading them sooner -->
+    <link rel="preload" href="Build/g.loader.js" as="script">
+    <link rel="preload" href="Build/g.framework.js" as="script">
+    <link rel="preload" href="Build/g_1.data" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="Build/g_2.data" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="Build/g_3.data" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="Build/g_1.wasm" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="Build/g_2.wasm" as="fetch" crossorigin="anonymous">
 
     <!-- GameMonetize SDK -->
     <script type="text/javascript">
@@ -40,7 +75,7 @@
             if (!a.getElementById(c)) {
                 var s = a.createElement(b);
                 s.id = c;
-                s.src = "https://cdn.jsdelivr.net/gh/testamalame/sef@main/sedk.js";
+                s.src = "Build/sdk.js";
                 d.parentNode.insertBefore(s, d);
             }
         })(document, "script", "gamemonetize-sdk");
@@ -51,7 +86,8 @@
     <div id="unity-container" style="position: absolute; width: 100%; height: 100%; left: 0; top: 0;">
         <canvas id="unity-canvas" style="position: absolute; width: 100%; height: 100%;"></canvas>
         <div id="unity-loading-bar">
-            <div id="unity-logo"></div>
+            <div id="unity-logo" style="display: none;"></div>
+            <div style="margin-bottom: 15px; font-family: sans-serif; color: #555; font-weight: bold; text-align: center;">Loading Graphing Engine...</div>
             <div id="unity-progress-bar-empty">
                 <div id="unity-progress-bar-full"></div>
             </div>
@@ -102,7 +138,7 @@
 
         let environmentData = {
             language: "en",
-            domain: "default_domain",
+            domain: window.location.hostname,
             deviceType: "desktop",
             isMobile: false,
             isDesktop: true,
@@ -127,14 +163,14 @@
             })()
 
         }; const dataParts = [
-            "https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/Build/Granny%202_part1.data",
-            "https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/Build/Granny%202_part2.data",
-            "https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/Build/Granny%202_part3.data"
+            "Build/g_1.data",
+            "Build/g_2.data",
+            "Build/g_3.data"
         ];
 
         const wasmParts = [
-            "https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/Build/Granny%202_part1.wasm",
-            "https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/Build/Granny%202_part2.wasm"
+            "Build/g_1.wasm",
+            "Build/g_2.wasm"
         ];
 
         async function mergeFiles(parts, onProgress) {
@@ -156,60 +192,103 @@
             return new Blob(blobs, { type: blobs[0].type });
         }
 
-        const buildUrl = "https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/Build";
-        const loaderUrl = buildUrl + "/Granny%202.loader.js";
+        const buildUrl = "Build";
+        const loaderUrl = buildUrl + "/g.loader.js";
 
         async function initializeGame() {
-        console.log("Environment Data:", environmentData);
-        loadingBar.style.display = "block";
-        console.log("Loading bar displayed.");
+            console.log("Environment Data:", environmentData);
+            loadingBar.style.display = "block";
+            console.log("Loading bar displayed.");
 
-
-        try {
-            var dataUrl = URL.createObjectURL(await mergeFiles(dataParts, progress => {
-                progressBarFull.style.width = (50 * progress) + "%";
-            }));
-            var wasmUrl = URL.createObjectURL(await mergeFiles(wasmParts, progress => {
-                progressBarFull.style.width = (50 + 50 * progress) + "%";
-            }));
-        } catch (e) {
-            console.error("Error while fetching/merging parts", e);
-            unityShowBanner("Failed to load game data.", "error");
-            return;
-        }
-
-        var config = {
-            dataUrl: dataUrl,
-            frameworkUrl: buildUrl + "/Granny%202.framework.js",
-            codeUrl: wasmUrl,
-            streamingAssetsUrl: "StreamingAssets",
-            companyName: "Awesome",
-            productName: "Granny 2",
-            productVersion: "1.0",
-            showBanner: unityShowBanner,
-        };
-
-        var script = document.createElement("script");
-        script.src = loaderUrl;
-        script.onload = () => {
-            createUnityInstance(canvas, config, (progress) => {
-                progressBarFull.style.width = (100 * progress) + "%";
-            }).then((unityInstance) => {
-                URL.revokeObjectURL(dataUrl);
-                URL.revokeObjectURL(wasmUrl);
-                myGameInstance = unityInstance;
-                setTimeout(() => { loadingBar.style.display = "none"; }, 500);
-                canvas.addEventListener('pointerdown', showAdOnClick);
-                canvas.addEventListener('touchstart', showAdOnClick);
-            }).catch((message) => {
-                console.error("Unity createUnityInstance error:", message);
-                alert(message);
+            // Start loading the Unity loader script early, in parallel with other assets.
+            const loaderScriptPromise = new Promise((resolve, reject) => {
+                const script = document.createElement("script");
+                script.src = loaderUrl;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.body.appendChild(script);
             });
-        };
-        document.body.appendChild(script);
+
+            try {
+                let dataProgress = 0;
+                let wasmProgress = 0;
+
+                const updateFileLoadProgressBar = () => {
+                    // Weigh progress by number of parts for a more accurate loading bar.
+                    const totalParts = dataParts.length + wasmParts.length;
+                    const weightedProgress = (dataProgress * dataParts.length + wasmProgress * wasmParts.length) / totalParts;
+                    // File loading will take up the first 90% of the progress bar.
+                    progressBarFull.style.width = (weightedProgress * 90) + "%";
+                };
+
+                // In parallel, fetch and merge game data/code parts.
+                const [dataBlob, wasmBlob] = await Promise.all([
+                    mergeFiles(dataParts, progress => {
+                        dataProgress = progress;
+                        updateFileLoadProgressBar();
+                    }),
+                    mergeFiles(wasmParts, progress => {
+                        wasmProgress = progress;
+                        updateFileLoadProgressBar();
+                    })
+                ]);
+
+                const dataUrl = URL.createObjectURL(dataBlob);
+                const wasmUrl = URL.createObjectURL(wasmBlob);
+
+                const config = {
+                    dataUrl: dataUrl,
+                    frameworkUrl: buildUrl + "/g.framework.js",
+                    codeUrl: wasmUrl,
+                    streamingAssetsUrl: "StreamingAssets",
+                    companyName: "Awesome",
+                    productName: "Granny 2",
+                    productVersion: "1.0",
+                    showBanner: unityShowBanner,
+                };
+
+                // Wait for the loader script to be ready before creating the instance.
+                await loaderScriptPromise;
+
+                createUnityInstance(canvas, config, (progress) => {
+                    // Unity instance creation progress. This will run after file loading is complete.
+                    // We'll use it for the final 10% of the progress bar.
+                    progressBarFull.style.width = 90 + (progress * 10) + "%";
+                }).then((unityInstance) => {
+                    URL.revokeObjectURL(dataUrl);
+                    URL.revokeObjectURL(wasmUrl);
+                    myGameInstance = unityInstance;
+                    // Finalizing, hide loading bar.
+                    progressBarFull.style.width = "100%";
+                    setTimeout(() => { loadingBar.style.display = "none"; }, 500);
+                    canvas.addEventListener('pointerdown', showAdOnClick);
+                    canvas.addEventListener('touchstart', showAdOnClick);
+                }).catch((message) => {
+                    console.error("Unity createUnityInstance error:", message);
+                    alert(message);
+                });
+            } catch (e) {
+                console.error("Error while fetching/merging parts or loading script", e);
+                unityShowBanner("Failed to load game data.", "error");
+                return;
+            }
         }
 
         initializeGame();
+    </script>
+
+    <!-- Panic Button: Press Backslash (\) to instantly redirect to Google Classroom -->
+    <script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === '\\' || event.key === '|') {
+                // Prevent the key from doing anything else and mute audio immediately
+                event.preventDefault();
+                if (typeof myGameInstance !== 'undefined' && myGameInstance) {
+                    try { myGameInstance.SendMessage('AudioManager', 'MuteAudio'); } catch(e) {}
+                }
+                window.location.replace("https://classroom.google.com");
+            }
+        });
     </script>
 
     <!-- Sticky Bottom Center Ad (728x90) -->
