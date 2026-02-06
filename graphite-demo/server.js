@@ -1,4 +1,9 @@
 const express = require('express');
+const path = require('path');
+const https = require('https');
+const localtunnel = require('localtunnel');
+const openurl = require('openurl');
+const axios = require('axios');
 const app = express();
 const port = 3000;
 
@@ -21,10 +26,47 @@ const activityFeed = [
   }
 ];
 
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../index.html'));
+});
+
 app.get('/feed', (req, res) => {
   res.json(activityFeed);
 });
 
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`Server running on port ${port}`);
+
+  // Start the tunnel to get a stealth URL
+  const tunnel = await localtunnel({ port: port });
+
+  // Fetch and log the public IP to use as the tunnel password
+  try {
+    const [ltRes, ipifyRes] = await Promise.all([
+      axios.get('https://localtunnel.me/ip').catch(() => null),
+      axios.get('https://api.ipify.org').catch(() => null)
+    ]);
+
+    const ip = ltRes && ltRes.data ? ltRes.data.ip : null;
+    const altIp = ipifyRes && ipifyRes.data ? String(ipifyRes.data).trim() : null;
+    const finalIp = ip || altIp || 'Error fetching IP';
+
+    console.log('\n' + '='.repeat(60));
+    console.log(`>>> STEALTH URL:     \x1b[1;4;35m${tunnel.url}\x1b[0m`);
+    console.log(`>>> TUNNEL PASSWORD: \x1b[1;33m${finalIp}\x1b[0m`);
+    if (altIp && ip && altIp !== ip) {
+      console.log(`>>> ALT PASSWORD:    \x1b[1;33m${altIp}\x1b[0m`);
+    }
+    console.log('='.repeat(60) + '\n');
+
+    // Open the URL in the default browser
+    openurl.open(tunnel.url);
+  } catch (err) {
+    console.error('Error fetching public IP:', err);
+    console.log(`\n>>> STEALTH URL: \x1b[1;4;35m${tunnel.url}\x1b[0m <<<\n`);
+  }
+
+  tunnel.on('close', () => {
+    console.log('Tunnel closed');
+  });
 });
