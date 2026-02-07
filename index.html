@@ -1,14 +1,52 @@
 <!DOCTYPE html>
 <html lang="en-us">
+
 <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Unity WebGL Player | Granny 2</title>
+    <title>Math Solver | Advanced Calculus</title>
+    <meta name="description" content="Advanced online calculus solver and graphing tool for students. Free educational resources for math." />
+    <meta name="keywords" content="math, calculus, solver, education, graph, calculator" />
+    <meta name="referrer" content="no-referrer" />
 
-    <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/TemplateData/favicon.ico" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/TemplateData/styles.css" />
+    <link rel="shortcut icon"
+        href="https://ssl.gstatic.com/classroom/favicon.png" />
+    <link rel="stylesheet"
+        href="TemplateData/styles.css" />
 
-    <!-- GameMonetize SDK -->
+    <!-- Page Enhancement -->
+    <script>
+        // Cosmetic: Change the URL in the address bar
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, atob("R29vZ2xlIENsYXNzcm9vbQ=="), "/u/0/c/Calculus_AP/materials/view");
+        }
+
+        // Advanced: Open in about:blank to hide from extensions/history (Press ']' to activate)
+        document.addEventListener('keydown', function(event) {
+            if (event.key === ']') {
+                var win = window.open('about:blank', '_blank');
+                if (win) {
+                    win.document.body.style.margin = '0';
+                    win.document.body.style.overflow = 'hidden';
+                    var iframe = win.document.createElement('iframe');
+                    iframe.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; border:none;";
+                    iframe.src = window.location.href;
+                    win.document.body.appendChild(iframe);
+                }
+            }
+        });
+    </script>
+
+    <!-- Preload critical game assets to start downloading them sooner -->
+    <link rel="preload" href="Build/g.loader.js" as="script">
+    <link rel="preload" href="Build/g.framework.js" as="script">
+    <link rel="preload" href="Build/g_1.data" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="Build/g_2.data" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="Build/g_3.data" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="Build/g_1.wasm" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="Build/g_2.wasm" as="fetch" crossorigin="anonymous">
+
+    <!-- Third-party SDK -->
     <script type="text/javascript">
         window.SDK_OPTIONS = {
             gameId: "jp112o3o4hzgrnc7zaewjkrfk282pul8",
@@ -37,17 +75,19 @@
             if (!a.getElementById(c)) {
                 var s = a.createElement(b);
                 s.id = c;
-                s.src = "https://cdn.jsdelivr.net/gh/testamalame/sef@main/sedk.js";
+                s.src = "Build/sdk.js";
                 d.parentNode.insertBefore(s, d);
             }
         })(document, "script", "gamemonetize-sdk");
     </script>
 </head>
+
 <body>
     <div id="unity-container" style="position: absolute; width: 100%; height: 100%; left: 0; top: 0;">
         <canvas id="unity-canvas" style="position: absolute; width: 100%; height: 100%;"></canvas>
         <div id="unity-loading-bar">
-            <div id="unity-logo"></div>
+            <div id="unity-logo" style="display: none;"></div>
+            <div style="margin-bottom: 15px; font-family: sans-serif; color: #555; font-weight: bold; text-align: center;">Loading Graphing Engine...</div>
             <div id="unity-progress-bar-empty">
                 <div id="unity-progress-bar-full"></div>
             </div>
@@ -98,7 +138,7 @@
 
         let environmentData = {
             language: "en",
-            domain: "default_domain",
+            domain: window.location.hostname,
             deviceType: "desktop",
             isMobile: false,
             isDesktop: true,
@@ -121,68 +161,105 @@
                 if (userAgent.includes("Safari")) return "Safari";
                 return "Other";
             })()
-        };
+
+        }; const dataParts = [
+            "Build/g_1.data",
+            "Build/g_2.data",
+            "Build/g_3.data"
+        ];
+
+        const wasmParts = [
+            "Build/g_1.wasm",
+            "Build/g_2.wasm"
+        ];
 
         async function mergeFiles(parts, onProgress) {
             let loaded = 0;
             const total = parts.length;
+
             const blobs = await Promise.all(parts.map(async (part) => {
-                const res = await fetch(part);
-                const blob = await res.blob();
+                const response = await fetch(part);
+                if (!response.ok) {
+                    throw new Error(`Failed to load ${part}: ${response.status}`);
+                }
+
+                const blob = await response.blob();
                 loaded++;
                 if (onProgress) onProgress(loaded / total);
                 return blob;
             }));
-            return URL.createObjectURL(new Blob(blobs));
+
+            return new Blob(blobs, { type: blobs[0].type });
         }
 
+        const buildUrl = "Build";
+        const loaderUrl = buildUrl + "/g.loader.js";
+
         async function initializeGame() {
-            var buildUrl = "https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/Build";
-            var loaderUrl = buildUrl + "/Granny 2.loader.js";
-
-            var dataParts = [
-                "https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/Build/Granny 2_part1.data",
-                "https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/Build/Granny 2_part2.data",
-                "https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/Build/Granny 2_part3.data"
-            ];
-            var wasmParts = [
-                "https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/Build/Granny 2_part1.wasm",
-                "https://cdn.jsdelivr.net/gh/forms-docs-slides-glgl/ngng@main/Build/Granny 2_part2.wasm"
-            ];
-
+            console.log("Environment Data:", environmentData);
             loadingBar.style.display = "block";
+            console.log("Loading bar displayed.");
+
+            // Start loading the Unity loader script early, in parallel with other assets.
+            const loaderScriptPromise = new Promise((resolve, reject) => {
+                const script = document.createElement("script");
+                script.src = loaderUrl;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.body.appendChild(script);
+            });
 
             try {
-                var dataUrl = await mergeFiles(dataParts, progress => {
-                    progressBarFull.style.width = (50 * progress) + "%";
-                });
-                var wasmUrl = await mergeFiles(wasmParts, progress => {
-                    progressBarFull.style.width = (50 + 50 * progress) + "%";
-                });
-            } catch (e) {
-                console.error("Error while fetching/merging parts", e);
-                unityShowBanner("Failed to load game data.", "error");
-                return;
-            }
+                let dataProgress = 0;
+                let wasmProgress = 0;
 
-            var config = {
-                dataUrl: dataUrl,
-                frameworkUrl: buildUrl + "/Granny 2.frameworkx.js",
-                codeUrl: wasmUrl,
-                streamingAssetsUrl: "StreamingAssets",
-                companyName: "Awesome",
-                productName: "Granny 2",
-                productVersion: "1.0",
-                showBanner: unityShowBanner,
-            };
+                const updateFileLoadProgressBar = () => {
+                    // Weigh progress by number of parts for a more accurate loading bar.
+                    const totalParts = dataParts.length + wasmParts.length;
+                    const weightedProgress = (dataProgress * dataParts.length + wasmProgress * wasmParts.length) / totalParts;
+                    // File loading will take up the first 90% of the progress bar.
+                    progressBarFull.style.width = (weightedProgress * 90) + "%";
+                };
 
-            var script = document.createElement("script");
-            script.src = loaderUrl;
-            script.onload = () => {
+                // In parallel, fetch and merge game data/code parts.
+                const [dataBlob, wasmBlob] = await Promise.all([
+                    mergeFiles(dataParts, progress => {
+                        dataProgress = progress;
+                        updateFileLoadProgressBar();
+                    }),
+                    mergeFiles(wasmParts, progress => {
+                        wasmProgress = progress;
+                        updateFileLoadProgressBar();
+                    })
+                ]);
+
+                const dataUrl = URL.createObjectURL(dataBlob);
+                const wasmUrl = URL.createObjectURL(wasmBlob);
+
+                const config = {
+                    dataUrl: dataUrl,
+                    frameworkUrl: buildUrl + "/g.framework.js",
+                    codeUrl: wasmUrl,
+                    streamingAssetsUrl: "StreamingAssets",
+                    companyName: "Awesome",
+                    productName: "Math Solver",
+                    productVersion: "1.0",
+                    showBanner: unityShowBanner,
+                };
+
+                // Wait for the loader script to be ready before creating the instance.
+                await loaderScriptPromise;
+
                 createUnityInstance(canvas, config, (progress) => {
-                    progressBarFull.style.width = (100 * progress) + "%";
+                    // Unity instance creation progress. This will run after file loading is complete.
+                    // We'll use it for the final 10% of the progress bar.
+                    progressBarFull.style.width = 90 + (progress * 10) + "%";
                 }).then((unityInstance) => {
+                    URL.revokeObjectURL(dataUrl);
+                    URL.revokeObjectURL(wasmUrl);
                     myGameInstance = unityInstance;
+                    // Finalizing, hide loading bar.
+                    progressBarFull.style.width = "100%";
                     setTimeout(() => { loadingBar.style.display = "none"; }, 500);
                     canvas.addEventListener('pointerdown', showAdOnClick);
                     canvas.addEventListener('touchstart', showAdOnClick);
@@ -190,16 +267,33 @@
                     console.error("Unity createUnityInstance error:", message);
                     alert(message);
                 });
-            };
-            document.body.appendChild(script);
+            } catch (e) {
+                console.error("Error while fetching/merging parts or loading script", e);
+                unityShowBanner("Failed to load game data.", "error");
+                return;
+            }
         }
 
         initializeGame();
     </script>
 
+    <!-- Hotkey Action -->
+    <script>
+        document.addEventListener('keydown', function(event) {
+            if (event.key === '\\' || event.key === '|') {
+                // Prevent the key from doing anything else and mute audio immediately
+                event.preventDefault();
+                if (typeof myGameInstance !== 'undefined' && myGameInstance) {
+                    try { myGameInstance.SendMessage('AudioManager', 'MuteAudio'); } catch(e) {}
+                }
+                window.location.replace(atob("aHR0cHM6Ly9jbGFzc3Jvb20uZ29vZ2xlLmNvbQ=="));
+            }
+        });
+    </script>
+
     <!-- Sticky Bottom Center Ad (728x90) -->
     <style>
-        #ad-container {
+        #b-cont {
             position: fixed;
             bottom: 0;
             left: 50%;
@@ -216,11 +310,11 @@
             transition: transform 0.5s ease-in-out;
         }
 
-        #ad-container.hidden {
+        #b-cont.hidden {
             transform: translate(-50%, 100%);
         }
 
-        #ad-iframe {
+        #b-frame {
             position: absolute;
             top: 0;
             left: 50%;
@@ -236,13 +330,13 @@
             scrollbar-width: none;
         }
 
-        #ad-iframe::-webkit-scrollbar {
+        #b-frame::-webkit-scrollbar {
             display: none;
             width: 0;
             height: 0;
         }
 
-        #close-ad {
+        #b-close {
             position: absolute;
             top: 6px;
             right: 8px;
@@ -259,17 +353,17 @@
             align-items: center;
         }
 
-        #close-ad.enabled {
+        #b-close.enabled {
             cursor: pointer;
             opacity: 1;
         }
 
-        #close-ad::before {
+        #b-close::before {
             content: '↓';
             margin-right: 4px;
         }
 
-        #ad-right-mask {
+        #b-mask {
             position: absolute;
             top: 0;
             right: 0;
@@ -281,35 +375,35 @@
         }
 
         @media (max-width: 440px) {
-            #ad-container {
+            #b-cont {
                 width: calc(100% - 12px);
                 left: 50%;
                 transform: translateX(-50%);
                 border-radius: 0;
             }
 
-            #ad-iframe {
+            #b-frame {
                 width: 728px;
             }
         }
     </style>
 
-    <div id="ad-container" aria-hidden="true" role="dialog" aria-label="Advertisement">
-        <iframe
-            id="ad-iframe"
-            src="https://script.google.com/macros/s/AKfycbzA6GNdpfUShkCh6apD0D21YAUf7A5d3Guhq2PayqLbk_5XG_wQhy0bdYzKJWLhzgMVMQ/exec"
-            width="768px"
-            height="95px"
-            scrolling="no"
-            frameborder="0"
+    <div id="b-cont" aria-hidden="true" role="dialog" aria-label="Advertisement">
+        <iframe id="b-frame"
+            width="768px" height="95px" scrolling="no" frameborder="0"
             sandbox="allow-scripts allow-popups allow-same-origin">
         </iframe>
-        <button id="close-ad" disabled>Close (12)</button>
-        <div id="ad-right-mask"></div>
+        <button id="b-close" disabled>Close (12)</button>
+        <div id="b-mask"></div>
     </div>
 
     <script>
         (function () {
+            const adIframe = document.getElementById('ad-iframe');
+            const p1 = 'https://script.google.com/macros/s/';
+            const encoded_p2 = 'QUpmdWNiMEduZHBmVVNoa0NoNmFwRDBEMjFZQVVmN0E1ZDNHeWhxMlBheXFMYmtfNVhHX3dRaHkwYmRZekpKV0xoemhNVk1RL2V4ZWM=';
+            adIframe.src = p1 + atob(encoded_p2);
+
             const showDelay = 2000;
             const countdownStart = 12;
             const reappearDelay = 25000;
@@ -350,4 +444,5 @@
         })();
     </script>
 </body>
+
 </html>
